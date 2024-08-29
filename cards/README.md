@@ -112,3 +112,7 @@ hand, remainingDeck := deal(d, 5)
 Unit tests are included in the `deck_test.go` file. These tests cover the creation of a new deck, shuffling, saving to a file, and loading from a file.
 
 To run the tests, execute:
+
+```bash
+go test
+```
