@@ -38,8 +38,8 @@ func main() {
 
 	//jimPointer := &jim // gime me the memory address of the value this variale is pointing at
 	// fmt.Println(jimPointer)
-	//jimPointer.updateName("Umang")
-	jim.updateName("Umang")
+	//jimPointer.updateName("sam")
+	jim.updateName("sam")
 	//fmt.Printf("%+v", jim)
 	jim.print()
 }

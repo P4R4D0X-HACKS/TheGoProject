@@ -92,17 +92,17 @@ func main() {
         },
     }
 
-    jim.updateName("Umang")
+    jim.updateName("sam")
     jim.print()
 }
 ```
 
-This will update the `firstName` of the `jim` object to "Umang" and print the updated values.
+This will update the `firstName` of the `jim` object to "sam" and print the updated values.
 
 ### Output
 
 ```go
-{firstName:Umang lastName:Party contact:{email:jim@gmail.com zipCode:741235}}
+{firstName:sam lastName:Party contact:{email:jim@gmail.com zipCode:741235}}
 ```
 
 ### Key Takeaways
