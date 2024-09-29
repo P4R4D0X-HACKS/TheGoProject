@@ -8,26 +8,34 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
+// Validate MAC address format
+func isValidMac(mac string) bool {
+	// MAC address regex pattern
+	macPattern := `^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$`
+	re := regexp.MustCompile(macPattern)
+	return re.MatchString(mac)
+}
 
-func executeCommand(command string,args_arr []string)(err error) {
-
+// Execute commands and check for errors
+func executeCommand(command string, args_arr []string) error {
 	args := args_arr
 	cmd := exec.Command(command, args...) // Use a fetch a command with multiple arguments
 
 	var stderrBuf bytes.Buffer
 	cmd.Stdout = os.Stdout // Link standard output
 	cmd.Stderr = &stderrBuf // Link standard error
-	cmd.Stdin = os.Stdin // link standard input
+	cmd.Stdin = os.Stdin // Link standard input
 
-	err = cmd.Run() // Run a command 
+	err := cmd.Run() // Run a command 
 	if err != nil {
 		// Check if the error is due to 'ifconfig' not being found
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if strings.Contains(stderrBuf.String(), "not found") {
-				return fmt.Errorf("command not found") // Return a specific error for not found
+				return fmt.Errorf("command not found")
 			} else {
 				// If not a 'not found' error, print the exit code
 				fmt.Printf("Command exited with code: %d\n", exitError.ExitCode())
@@ -38,13 +46,13 @@ func executeCommand(command string,args_arr []string)(err error) {
 	return nil
 }
 
-func showInterfaces(){
+func showInterfaces() {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		log.Fatal("Error fetching interface", err)
+		log.Fatal("Error fetching interfaces: ", err)
 	}
 
-	for _, iface := range interfaces{
+	for _, iface := range interfaces {
 		if iface.Flags&net.FlagUp != 0 {
 			fmt.Printf("%s: %s\n", iface.Name, iface.HardwareAddr)
 		}
@@ -66,7 +74,6 @@ func getOriginalMac(interfaceName string) (string, error) {
 	return "", fmt.Errorf("interface %s not found or not active", interfaceName)
 }
 
-
 func displayHelp() {
 	fmt.Println("Usage:")
 	fmt.Println("  -iface <interface>  Specify the interface for which you want to change the MAC address.")
@@ -78,8 +85,8 @@ func displayHelp() {
 }
 
 func main() {
-	iface := flag.String("iface", "", "Interface for which you want to change the mac address")
-	newMac := flag.String("newMac", "", "The custom mac address which you want to assig")
+	iface := flag.String("iface", "", "Interface for which you want to change the MAC address")
+	newMac := flag.String("newMac", "", "The custom MAC address you want to assign")
 	help := flag.Bool("help", false, "Show help")
 	flag.Parse()
 
@@ -94,8 +101,15 @@ func main() {
 		return
 	}
 
-	showInterfaces() // show the live interfaces 
-	
+	// Validate the new MAC address format
+	if !isValidMac(*newMac) {
+		fmt.Println("Error: Invalid MAC address format.")
+		displayHelp()
+		return
+	}
+
+	showInterfaces() // Show the live interfaces 
+
 	// Retrieve the original MAC address using the new function
 	originalMac, err := getOriginalMac(*iface)
 	if err != nil {
@@ -103,36 +117,32 @@ func main() {
 	}
 
 	// Execute commands and check for errors
-	if err := executeCommand("sudo", []string{"ifconfig", *iface, "down"}); err != nil {
+	if err := executeCommand("sudo", []string{"ip", "link", "set", *iface, "down"}); err != nil {
 		if strings.Contains(err.Error(), "command not found") {
-			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
-			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			fmt.Println("Error: 'ip' command not found. Please install the iproute2 package.")
 			return
 		}
-		log.Fatal(err)
+		log.Println(err) // Log the error without terminating the program
+		return
 	}
 
-	if err := executeCommand("sudo", []string{"ifconfig", *iface, "hw", "ether", *newMac}); err != nil {
+	if err := executeCommand("sudo", []string{"ip", "link", "set", *iface, "address", *newMac}); err != nil {
 		if strings.Contains(err.Error(), "command not found") {
-			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
-			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			fmt.Println("Error: 'ip' command not found. Please install the iproute2 package.")
 			return
 		}
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
-	if err := executeCommand("sudo", []string{"ifconfig", *iface, "up"}); err != nil {
+	if err := executeCommand("sudo", []string{"ip", "link", "set", *iface, "up"}); err != nil {
 		if strings.Contains(err.Error(), "command not found") {
-			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
-			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			fmt.Println("Error: 'ip' command not found. Please install the iproute2 package.")
 			return
 		}
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
-
-	// executeCommand("sudo", []string{"ifconfig",*iface,"down"})
-	// executeCommand("sudo", []string{"ifconfig",*iface,"hw", "ether", *newMac})
-	// executeCommand("sudo", []string{"ifconfig",*iface,"up"})
 
 	fmt.Printf("\n%s\t\t%s\t\t%s\n", "Interface", "Original MAC", "New MAC")
 	fmt.Printf("%s\t\t%s\t\t%s\n", *iface, originalMac, *newMac)
