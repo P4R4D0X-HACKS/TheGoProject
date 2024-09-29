@@ -53,6 +53,7 @@ func main() {
 	iface := flag.String("iface", "", "Interface for which you want to change the mac address")
 	newMac := flag.String("newMac", "", "The custom mac address which you want to assig")
 	help := flag.Bool("help", false, "Show help")
+	flag.Parse()
 
 	if *help {
 		displayHelp()
@@ -65,7 +66,8 @@ func main() {
 		return
 	}
 
-	flag.Parse()
+	showInterfaces() // show the live interfaces 
+	
 	executeCommand("sudo", []string{"ifconfig",*iface,"down"})
 	executeCommand("sudo", []string{"ifconfig",*iface,"hw", "ether", *newMac})
 	executeCommand("sudo", []string{"ifconfig",*iface,"up"})
