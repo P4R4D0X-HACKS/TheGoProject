@@ -38,6 +38,21 @@ func showInterfaces(){
 	}
 }
 
+func getOriginalMac(interfaceName string) (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, ifaceDetail := range interfaces {
+		if ifaceDetail.Name == interfaceName && ifaceDetail.Flags&net.FlagUp != 0 { // Check if the interface is active
+			return ifaceDetail.HardwareAddr.String(), nil // Return the MAC address
+		}
+	}
+
+	return "", fmt.Errorf("interface %s not found or not active", interfaceName)
+}
+
 
 func displayHelp() {
 	fmt.Println("Usage:")
@@ -68,7 +83,16 @@ func main() {
 
 	showInterfaces() // show the live interfaces 
 	
+	// Retrieve the original MAC address using the new function
+	originalMac, err := getOriginalMac(*iface)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	executeCommand("sudo", []string{"ifconfig",*iface,"down"})
 	executeCommand("sudo", []string{"ifconfig",*iface,"hw", "ether", *newMac})
 	executeCommand("sudo", []string{"ifconfig",*iface,"up"})
+
+	fmt.Printf("\n%s\t\t%s\t\t%s\n", "Interface", "Original MAC", "New MAC")
+	fmt.Printf("%s\t\t%s\t\t%s\n", *iface, originalMac, *newMac)
 }
