@@ -27,18 +27,15 @@ func executeCommand(command string,args_arr []string)(err error) {
 		// Check if the error is due to 'ifconfig' not being found
 		if exitError, ok := err.(*exec.ExitError); ok {
 			if strings.Contains(stderrBuf.String(), "not found") {
-				fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
-				fmt.Println("You can do this by running: sudo apt-get install net-tools")
-				return nil // Return nil to prevent logging a fatal error
+				return fmt.Errorf("command not found") // Return a specific error for not found
 			} else {
 				// If not a 'not found' error, print the exit code
 				fmt.Printf("Command exited with code: %d\n", exitError.ExitCode())
 			}
 		}
-		log.Fatal("cmd.Run() failed ", err)
-		return
+		return fmt.Errorf("cmd.Run() failed: %v", err) // Return a generic error
 	}
-	return
+	return nil
 }
 
 func showInterfaces(){
@@ -105,9 +102,37 @@ func main() {
 		log.Fatal(err)
 	}
 
-	executeCommand("sudo", []string{"ifconfig",*iface,"down"})
-	executeCommand("sudo", []string{"ifconfig",*iface,"hw", "ether", *newMac})
-	executeCommand("sudo", []string{"ifconfig",*iface,"up"})
+	// Execute commands and check for errors
+	if err := executeCommand("sudo", []string{"ifconfig", *iface, "down"}); err != nil {
+		if strings.Contains(err.Error(), "command not found") {
+			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
+			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			return
+		}
+		log.Fatal(err)
+	}
+
+	if err := executeCommand("sudo", []string{"ifconfig", *iface, "hw", "ether", *newMac}); err != nil {
+		if strings.Contains(err.Error(), "command not found") {
+			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
+			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			return
+		}
+		log.Fatal(err)
+	}
+
+	if err := executeCommand("sudo", []string{"ifconfig", *iface, "up"}); err != nil {
+		if strings.Contains(err.Error(), "command not found") {
+			fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
+			fmt.Println("You can do this by running: sudo apt-get install net-tools")
+			return
+		}
+		log.Fatal(err)
+	}
+
+	// executeCommand("sudo", []string{"ifconfig",*iface,"down"})
+	// executeCommand("sudo", []string{"ifconfig",*iface,"hw", "ether", *newMac})
+	// executeCommand("sudo", []string{"ifconfig",*iface,"up"})
 
 	fmt.Printf("\n%s\t\t%s\t\t%s\n", "Interface", "Original MAC", "New MAC")
 	fmt.Printf("%s\t\t%s\t\t%s\n", *iface, originalMac, *newMac)
