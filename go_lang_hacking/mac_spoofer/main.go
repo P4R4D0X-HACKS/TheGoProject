@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 
@@ -19,6 +20,14 @@ func executeCommand(command string,args_arr []string)(err error) {
 
 	err = cmd.Run() // Run a command 
 	if err != nil {
+		// Check if the error is due to 'ifconfig' not being found
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if strings.Contains(string(exitError.Stderr), "not found") {
+				fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
+				fmt.Println("You can do this by running: sudo apt-get install net-tools")
+				return nil // Return nil to prevent logging a fatal error
+			}
+		}
 		log.Fatal("cmd.Run() failed ", err)
 		return
 	}
