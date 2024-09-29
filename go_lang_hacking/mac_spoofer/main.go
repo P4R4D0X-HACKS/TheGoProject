@@ -18,8 +18,8 @@ func executeCommand(command string,args_arr []string)(err error) {
 	cmd := exec.Command(command, args...) // Use a fetch a command with multiple arguments
 
 	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf // Link standard output
-	cmd.Stderr = os.Stderr // Link standard error
+	cmd.Stdout = os.Stdout // Link standard output
+	cmd.Stderr = &stderrBuf // Link standard error
 	cmd.Stdin = os.Stdin // link standard input
 
 	err = cmd.Run() // Run a command 
