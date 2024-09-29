@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -15,7 +16,9 @@ func executeCommand(command string,args_arr []string)(err error) {
 
 	args := args_arr
 	cmd := exec.Command(command, args...) // Use a fetch a command with multiple arguments
-	cmd.Stdout = os.Stdout // Link standard output
+
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf // Link standard output
 	cmd.Stderr = os.Stderr // Link standard error
 	cmd.Stdin = os.Stdin // link standard input
 
@@ -23,10 +26,13 @@ func executeCommand(command string,args_arr []string)(err error) {
 	if err != nil {
 		// Check if the error is due to 'ifconfig' not being found
 		if exitError, ok := err.(*exec.ExitError); ok {
-			if strings.Contains(string(exitError.Stderr), "not found") {
+			if strings.Contains(stderrBuf.String(), "not found") {
 				fmt.Println("Error: 'ifconfig' command not found. Please install the net-tools package.")
 				fmt.Println("You can do this by running: sudo apt-get install net-tools")
 				return nil // Return nil to prevent logging a fatal error
+			} else {
+				// If not a 'not found' error, print the exit code
+				fmt.Printf("Command exited with code: %d\n", exitError.ExitCode())
 			}
 		}
 		log.Fatal("cmd.Run() failed ", err)
