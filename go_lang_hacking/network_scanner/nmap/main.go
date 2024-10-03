@@ -40,5 +40,9 @@ func main() {
 		if len(host.Addresses) > 1 {
 			fmt.Printf("  - MAC addresses: %v\n", host.Addresses[1:])
 		}
+
+		for _, port := range host.Ports {
+			fmt.Printf("  - Port %d/%s %s %s\n", port.ID, port.Protocol, port.State, port.Service.Name)
+		}
 	}
 }
