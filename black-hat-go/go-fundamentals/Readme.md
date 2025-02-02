@@ -287,3 +287,6 @@ func main() {
 In this example, `fmt.Errorf` is used to create a formatted error message.
 
 Proper error handling is crucial for writing robust and reliable Go programs. Always check for errors and handle them appropriately.
+
+
+End of Chapter 1
